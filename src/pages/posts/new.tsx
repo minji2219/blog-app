@@ -1,12 +1,11 @@
-import React from "react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+import Header from "components/Header";
+import PostForm from "components/PostForm";
 
 const PostNew = () => {
   return (
     <div>
       <Header />
-      <Footer />
+      <PostForm />
     </div>
   );
 };
