@@ -8,20 +8,31 @@ import ProfilePage from "pages/profile";
 import LoginPage from "pages/login";
 import SignupPage from "pages/signup";
 
-const Router = () => {
+interface RouterProps {
+  isAuthenticated: boolean;
+}
+const Router = ({ isAuthenticated }: RouterProps) => {
   return (
     <div>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/posts" element={<PostsList />} />
-        <Route path="/posts/:id" element={<PostDetailPage />} />
-        <Route path="/posts/new" element={<PostNew />} />
-        <Route path="/posts/edit/:id" element={<PostEdit />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        {/* 위의 경로가 아닌 다른 경로로 들어올땐 메인 페이지로 replace해주기 */}
-        <Route path="*" element={<Navigate replace to="/" />} />
+        {isAuthenticated ? (
+          <>
+            <Route path="/" element={<Home />} />
+            <Route path="/posts" element={<PostsList />} />
+            <Route path="/posts/:id" element={<PostDetailPage />} />
+            <Route path="/posts/new" element={<PostNew />} />
+            <Route path="/posts/edit/:id" element={<PostEdit />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            {/* 위의 경로가 아닌 다른 경로로 들어올땐 메인 페이지로 replace해주기 */}
+            <Route path="*" element={<Navigate replace to="/" />} />
+          </>
+        ) : (
+          <>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="*" element={<Navigate replace to="/login" />} />
+          </>
+        )}
       </Routes>
     </div>
   );
