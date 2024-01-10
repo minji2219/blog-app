@@ -1,29 +1,164 @@
-import React from "react";
+import AuthContext from "context/AuthContext";
+import { addDoc, collection, doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "firebaseApp";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { CATEGORIES, CategoryType, PostProps } from "./PostList";
 
 const PostForm = () => {
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [content, setContent] = useState("");
+  const [post, setPost] = useState<null | PostProps>(null);
+  const [category, setCategory] = useState<CategoryType>("Frontend");
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const params = useParams();
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (post && post.id) {
+      //firebase 데이터 수정
+      const postRef = doc(db, "posts", post?.id);
+      await updateDoc(postRef, {
+        title: title,
+        summary: summary,
+        content: content,
+        updatedAt: new Date()?.toLocaleDateString("ko", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        email: user?.email,
+        uid: user?.uid,
+        category: category,
+      });
+      toast.success("게시글 수정이 완료됐습니다.");
+      navigate(`/posts/${post?.id}`);
+    } else {
+      try {
+        //firestore 데이터 생성
+        await addDoc(collection(db, "posts"), {
+          title: title,
+          summary: summary,
+          content: content,
+          createdAt: new Date()?.toLocaleDateString("ko", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+          email: user?.email,
+          uid: user?.uid,
+          category: category,
+        });
+        navigate("/");
+        toast.success("게시글을 생성했습니다.");
+      } catch (e: any) {
+        toast.error(e?.code);
+      }
+    }
+  };
+  const onChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const {
+      target: { name, value },
+    } = e;
+
+    if (name === "title") {
+      setTitle(value);
+    }
+    if (name === "summary") {
+      setSummary(value);
+    }
+    if (name === "content") {
+      setContent(value);
+    }
+    if (name === "category") {
+      setCategory(value as CategoryType);
+    }
+  };
+
+  const getPost = async () => {
+    if (params?.id) {
+      const docRef = doc(db, "posts", params?.id);
+      const docSnap = await getDoc(docRef);
+
+      setPost({ id: docSnap.id, ...(docSnap.data() as PostProps) });
+    }
+  };
+
+  useEffect(() => {
+    if (params?.id) getPost();
+  }, [params?.id]);
+
+  useEffect(() => {
+    if (post) {
+      setTitle(post.title);
+      setSummary(post.summary);
+      setContent(post.content);
+      setCategory(post.category as CategoryType);
+    }
+  }, [post]);
+
   return (
-    <form action="/post" method="POST" className="form">
+    <form onSubmit={onSubmit} className="form">
       <div className="form__block">
         <label htmlFor="title">제목</label>
-        <input type="text" name="title" id="title" required />
+        <input
+          type="text"
+          name="title"
+          id="title"
+          value={title}
+          required
+          onChange={onChange}
+        />
       </div>
       <div className="form__block">
         <label htmlFor="summary">요약</label>
-        <input type="text" name="summary" id="summary" required />
+        <input
+          type="text"
+          name="summary"
+          id="summary"
+          value={summary}
+          onChange={onChange}
+          required
+        />
       </div>
-      {/* <div>
-        <label>카테고리</label>
-        <select>
-          <option>a</option>
-          <option>b</option>
-          <option>c</option>
+      <div className="form__block">
+        <label htmlFor="category">카테고리</label>
+        <select
+          name="category"
+          id="category"
+          onChange={onChange}
+          defaultValue={category}
+        >
+          <option value="">카테고리를 선택해주세요</option>
+          {CATEGORIES?.map((category) => (
+            <option value={category} key={category}>
+              {category}
+            </option>
+          ))}
         </select>
-      </div> */}
+      </div>
       <div className="form__block">
         <label htmlFor="content">내용</label>
-        <textarea name="content" id="content" required />
+        <textarea
+          name="content"
+          id="content"
+          value={content}
+          onChange={onChange}
+          required
+        />
       </div>
-      <input type="submit" value="제출" className="form__btn--submit" />
+      <input
+        type="submit"
+        value={post ? "수정" : "제출"}
+        className="form__btn--submit"
+      />
     </form>
   );
 };

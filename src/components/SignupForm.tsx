@@ -19,7 +19,6 @@ const SignupForm = () => {
       navigate("/");
       toast.success("회원가입에 성공했습니다.");
     } catch (e: any) {
-      console.log(e);
       toast.error(e?.code);
     }
   };
